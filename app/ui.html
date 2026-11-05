@@ -1,0 +1,500 @@
+<title>Radar Relances</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : barre d'outils de pilotage en haut, onglets par étape du workflow, tableaux de travail denses */
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --sunk:#EDF1F8; --line:#D8DFEB; --fg:#14213A; --muted:#5B6782;
+  --navy:#0B2E63; --navy-2:#1C4A8F; --on-navy:#FFFFFF; --focus:#3C7BE0;
+  --hi:#B42318; --hi-bg:#FDECEA; --mid:#A15C07; --mid-bg:#FEF3E2; --lo:#1E7B45; --lo-bg:#E7F5EC;
+  --bar:#C9D5EA;
+  --f-ui:"Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1322; --surface:#121B2E; --sunk:#0F1729; --line:#25324C; --fg:#E6ECF7; --muted:#97A3BD;
+  --navy:#7FA6E8; --navy-2:#A9C4F2; --on-navy:#0C1322; --focus:#8DB4FF;
+  --hi:#F38B7F; --hi-bg:#3A1A18; --mid:#F2B45C; --mid-bg:#3A2A12; --lo:#6FD39A; --lo-bg:#123222; --bar:#2C3D5E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1322; --surface:#121B2E; --sunk:#0F1729; --line:#25324C; --fg:#E6ECF7; --muted:#97A3BD;
+  --navy:#7FA6E8; --navy-2:#A9C4F2; --on-navy:#0C1322; --focus:#8DB4FF;
+  --hi:#F38B7F; --hi-bg:#3A1A18; --mid:#F2B45C; --mid-bg:#3A2A12; --lo:#6FD39A; --lo-bg:#123222; --bar:#2C3D5E; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:14px;border-bottom:2px solid var(--navy)}
+.brand h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em;color:var(--navy);text-wrap:balance}
+.brand p{margin:2px 0 0;color:var(--muted);max-width:68ch}
+.src{font-size:12px;color:var(--muted);text-align:right}
+.src b{color:var(--fg);font-weight:600}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.lab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+input,select,button{font:inherit;color:inherit}
+input[type=date],input[type=number],select{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;width:100%}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);padding:7px 12px;font-weight:600}
+button.primary{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+button:hover{border-color:var(--navy-2)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px}
+nav.tabs a{padding:9px 14px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav.tabs a .step{font-family:var(--f-num);font-size:11px;margin-right:6px;opacity:.8}
+nav.tabs a[aria-current="page"]{color:var(--navy);border-bottom-color:var(--navy)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.kpi .v{font-family:var(--f-num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg);margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.hi{border-left:4px solid var(--hi)} .kpi.nav{border-left:4px solid var(--navy)}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;min-width:0}
+section.panel h2{margin:0 0 4px;font-size:17px;color:var(--navy);text-wrap:balance}
+section.panel h3{margin:14px 0 6px;font-size:14px}
+.sub{color:var(--muted);margin:0 0 12px;max-width:80ch}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:var(--sunk);text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:8px;white-space:nowrap;position:sticky;top:0}
+td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:middle}
+td.num,th.num{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.call td{background:color-mix(in srgb,var(--navy) 7%,transparent)}
+tr.call td:first-child{box-shadow:inset 3px 0 0 var(--navy)}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill.hi{background:var(--hi-bg);color:var(--hi)} .pill.mid{background:var(--mid-bg);color:var(--mid)} .pill.lo{background:var(--lo-bg);color:var(--lo)}
+.pill.nav{background:color-mix(in srgb,var(--navy) 14%,transparent);color:var(--navy)}
+.pbar{display:flex;align-items:center;gap:6px;min-width:110px}
+.pbar i{display:block;height:6px;border-radius:3px;background:var(--bar);flex:1;position:relative;overflow:hidden}
+.pbar i b{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.why{font-size:12px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.chip{border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;background:var(--surface)}
+.chip[aria-pressed="true"]{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.grid2>*{min-width:0}
+.note{font-size:12px;color:var(--muted);border-left:3px solid var(--line);padding:4px 10px;margin:10px 0 0}
+.err{color:var(--hi);font-weight:600}
+.ok{color:var(--lo);font-weight:600}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--navy);color:var(--navy)}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+svg text{fill:var(--muted);font-family:var(--f-ui);font-size:11px}
+svg .val{fill:var(--fg);font-family:var(--f-num);font-size:11px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+.big{font-family:var(--f-num);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.deck{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.card.hi{border-top:4px solid var(--hi)} .card.mid{border-top:4px solid var(--mid)} .card.lo{border-top:4px solid var(--lo)}
+.card ul{margin:6px 0 0;padding-left:18px} .card li{margin:3px 0}
+.mono{font-family:var(--f-num)}
+.status{min-height:18px;font-size:12px}
+@media (prefers-reduced-motion: no-preference){.pbar i b{transition:width .3s}}
+@media (max-width:640px){.brand h1{font-size:21px}.src{text-align:left}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Radar Relances</h1>
+      <p>Score de risque de retard de paiement pour prioriser les relances clients d’une PME ou ETI, avant même l’échéance.</p>
+    </div>
+    <div class="src" id="srcInfo">Chargement…</div>
+  </header>
+
+  <div class="controls" role="group" aria-label="Paramètres">
+    <div class="field">
+      <span class="lab">Données</span>
+      <div class="btnrow">
+        <button id="btnDemo" type="button">Jeu de démonstration</button>
+        <button id="btnImport" type="button" class="primary">Importer un CSV</button>
+      </div>
+    </div>
+    <div class="field"><label for="date">Date d’observation</label><input id="date" type="date"></div>
+    <div class="field"><label for="capN">Appels possibles cette semaine</label><input id="capN" type="number" min="1" max="200" value="5"></div>
+    <div class="field"><label for="rate">Taux des pénalités (% annuel)</label><input id="rate" type="number" min="0" step="0.05" value="12.40"></div>
+  </div>
+
+  <section class="panel" id="importPanel" hidden>
+    <h2>Importer l’export de votre ERP</h2>
+    <p class="sub">Un fichier CSV (séparateur virgule ou point-virgule) avec une ligne par facture, factures payées et ouvertes. Le fichier reste dans votre navigateur : rien n’est envoyé.</p>
+    <div class="drop" id="drop">Déposez le fichier ici ou <button type="button" id="btnPick">choisissez-le</button><input type="file" id="file" accept=".csv,text/csv" hidden></div>
+    <div id="mapZone" hidden>
+      <div class="mapgrid" id="mapGrid"></div>
+      <div class="btnrow" style="margin-top:12px"><button type="button" class="primary" id="btnApply">Utiliser ces colonnes</button><span class="status" id="mapStatus"></span></div>
+    </div>
+    <p class="note">Colonnes attendues : client, n° de facture, date de facture, date d’échéance, montant, date de règlement (vide si la facture est ouverte). Facultatif : litige (oui/non), facture dématérialisée (oui/non). Il faut au moins 50 factures dont l’échéance date de plus de 46 jours.</p>
+  </section>
+
+  <nav class="tabs" aria-label="Vues">
+    <a href="#relances"><span class="step">⑤⑥</span>Relances préventives</a>
+    <a href="#echues"><span class="step">⑦⑧</span>Factures échues</a>
+    <a href="#test"><span class="step">Y</span>Test X contre Z</a>
+    <a href="#tableau"><span class="step">⑩</span>Tableau de bord</a>
+    <a href="#decision"><span class="step">⑦</span>Grille de décision</a>
+    <a href="#methode"><span class="step">?</span>Méthode</a>
+  </nav>
+  <p class="status err" id="globalErr" hidden></p>
+
+  <!-- RELANCES PRÉVENTIVES -->
+  <div id="v-relances" class="view">
+    <div class="kpis" id="kpiRel"></div>
+    <section class="panel">
+      <h2>Liste de relances préventives</h2>
+      <p class="sub">Factures pas encore échues, classées par montant à risque (probabilité de retard × montant). Les lignes surlignées sont les appels à passer cette semaine, selon le nombre d’appels possibles indiqué plus haut.</p>
+      <div class="chips" id="winChips" role="group" aria-label="Fenêtre avant l’échéance"></div>
+      <div class="chips" id="lvlChips" role="group" aria-label="Niveau de risque"></div>
+      <div class="btnrow" style="margin-bottom:10px"><button type="button" id="copyRel">Copier la liste (pour Excel)</button><span class="status" id="copyStatus"></span></div>
+      <div class="tbl"><table id="tRel"></table></div>
+      <p class="note">Le test sur le jeu IBM montre que l’avantage du score est le plus fort quand on agit 2 à 4 semaines avant l’échéance : plus tard, il ne reste presque que des factures qui seront payées en retard, et un simple tri par montant fait aussi bien.</p>
+    </section>
+  </div>
+
+  <!-- ÉCHUES -->
+  <div id="v-echues" class="view" hidden>
+    <div class="kpis" id="kpiEch"></div>
+    <section class="panel">
+      <h2>Factures échues : calendrier de relance</h2>
+      <p class="sub">Étapes légales inchangées (workflow ⑦-⑧). L’étape proposée dépend du nombre de jours de retard ; les pénalités sont calculées au taux indiqué plus haut, plus l’indemnité forfaitaire de 40 € par facture.</p>
+      <div class="tbl"><table id="tEch"></table></div>
+      <p class="note">Calendrier type : email à J+7, second email à J+14, appel à J+21, courrier à J+28, mise en demeure en lettre recommandée avec AR vers J+35. En cas de litige déclaré, il faut le traiter avec l’ADV ou les commerciaux avant toute relance.</p>
+    </section>
+  </div>
+
+  <!-- TEST -->
+  <div id="v-test" class="view" hidden>
+    <section class="panel">
+      <h2>Test : le score (X) cible-t-il mieux les retards que l’ancienneté (Z) ?</h2>
+      <p class="sub">Chaque lundi de la période, on regarde les factures ouvertes dont l’échéance tombe dans la fenêtre choisie. Chaque méthode choisit le même nombre de factures à contacter. On mesure la part du montant des factures qui ont réellement été payées en retard que chaque méthode a ciblée. Le modèle est entraîné une seule fois, avec les données connues au début de la période.</p>
+      <div class="controls" style="margin:0 0 12px">
+        <div class="field"><label for="tStart">Début</label><input id="tStart" type="date"></div>
+        <div class="field"><label for="tEnd">Fin</label><input id="tEnd" type="date"></div>
+        <div class="field"><label for="tWin">Moment du contact</label>
+          <select id="tWin"><option value="0">Échéance dans 0 à 6 jours</option><option value="7">Échéance dans 7 à 13 jours</option><option value="14" selected>Échéance dans 14 à 20 jours</option><option value="21">Échéance dans 21 à 27 jours</option></select></div>
+        <div class="field"><label for="tCap">Factures contactées</label>
+          <select id="tCap"><option value="0.2" selected>20 % des factures de la fenêtre</option><option value="0.3">30 % des factures de la fenêtre</option></select></div>
+        <div class="field"><span class="lab">&nbsp;</span><button type="button" class="primary" id="btnTest">Lancer le test</button></div>
+      </div>
+      <div id="testOut"></div>
+    </section>
+  </div>
+
+  <!-- TABLEAU DE BORD -->
+  <div id="v-tableau" class="view" hidden>
+    <div class="kpis" id="kpiDash"></div>
+    <div class="grid2">
+      <section class="panel"><h2>Balance âgée</h2><p class="sub">Encours ouvert à la date d’observation, par ancienneté.</p><div id="chAge"></div></section>
+      <section class="panel"><h2>Encaissements attendus</h2><p class="sub">Estimation sur 8 semaines : échéance + retard probable du client. Peut alimenter la prévision de trésorerie.</p><div id="chCash"></div></section>
+    </div>
+    <section class="panel"><h2>Fiabilité du score</h2><div id="fiab"></div></section>
+  </div>
+
+  <!-- GRILLE -->
+  <div id="v-decision" class="view" hidden>
+    <section class="panel">
+      <h2>Grille de décision du credit manager</h2>
+      <p class="sub">Le score propose, le credit manager décide. Les seuils viennent du test : sur les factures de la période de test, le taux de retard réel a été de 10 % sous 30 %, de 41 % entre 30 et 60 %, et de 71 % au-delà de 60 %.</p>
+      <div class="deck">
+        <div class="card hi"><span class="pill hi">Risque élevé · probabilité ≥ 60 %</span>
+          <ul><li>Appel avant l’échéance pour confirmer la date et le mode de paiement.</li><li>Vérifier que la facture a bien été reçue et validée chez le client.</li><li>Si plusieurs factures ouvertes : proposer un échéancier écrit.</li><li>Réduire l’encours autorisé ou demander un acompte sur les prochaines commandes.</li><li>Après échéance : escalader plus tôt (appel dès J+3, mise en demeure sans attendre J+35 si promesse non tenue).</li><li>Envisager l’affacturage ou l’assurance-crédit pour ce client.</li></ul></div>
+        <div class="card mid"><span class="pill mid">Risque moyen · 30 à 60 %</span>
+          <ul><li>Email de rappel 5 jours avant l’échéance.</li><li>Calendrier standard après échéance : J+7, J+14, appel à J+21.</li><li>Surveiller l’évolution du score à la revue suivante.</li></ul></div>
+        <div class="card lo"><span class="pill lo">Risque faible · moins de 30 %</span>
+          <ul><li>Email automatique, sans action du credit manager.</li><li>Pas de restriction commerciale.</li><li>Remerciement après paiement pour entretenir la relation.</li></ul></div>
+      </div>
+      <h3>Cadre légal (inchangé)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Règle</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td>Délai de paiement maximal</td><td>60 jours à compter de la date de facture, ou 45 jours fin de mois.</td></tr>
+          <tr><td>Pénalités de retard</td><td>Dues dès le lendemain de l’échéance, sans rappel. Taux prévu aux CGV, au moins 3 fois le taux d’intérêt légal (8,25 % au 2nd semestre 2026). À défaut : taux BCE + 10 points, soit 12,40 % au 2nd semestre 2026 (taux BCE de 2,40 % au 1er juillet 2026). À vérifier avant usage.</td></tr>
+          <tr><td>Indemnité forfaitaire</td><td>40 € par facture payée en retard.</td></tr>
+          <tr><td>Mise en demeure</td><td>Lettre recommandée avec AR, en termes clairs et formels ; dernière étape amiable.</td></tr>
+          <tr><td>Suites</td><td>Créances de moins de 5 000 € : procédure simplifiée par commissaire de justice. Sinon : injonction de payer, référé-provision, assignation.</td></tr>
+        </tbody></table></div>
+      <p class="note">Informations générales, pas un avis juridique.</p>
+    </section>
+  </div>
+
+  <!-- MÉTHODE -->
+  <div id="v-methode" class="view" hidden>
+    <section class="panel">
+      <h2>Comment le score est calculé</h2>
+      <p class="sub">Une régression logistique, recalculée à chaque date d’observation (étape ⑨ du workflow). Elle n’utilise que des informations connues à cette date : jamais la date de paiement de la facture elle-même.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Variable</th><th>Calcul</th><th class="num">Poids (démo)</th></tr></thead>
+        <tbody id="tVars"></tbody></table></div>
+      <h3>Données d’apprentissage</h3>
+      <p class="sub">Factures dont l’échéance date de plus de 46 jours avant la date d’observation : leur issue (payée à l’heure ou en retard) est connue. Une facture est « en retard » si elle est réglée après l’échéance. Les taux du client sont lissés (3 factures fictives au taux moyen) pour ne pas sur-réagir avec peu d’historique.</p>
+      <h3>Limites</h3>
+      <ul class="sub">
+        <li>Jeu de démonstration simulé (IBM Watson, 2 466 factures de 100 clients, 2012-2013) ; montants exprimés en dollars dans la source et affichés ici en euros pour l’exemple.</li>
+        <li>Le test mesure le ciblage, pas l’effet réel d’un appel sur le paiement : la baisse du DSO reste une estimation.</li>
+        <li>Le score repose surtout sur l’historique du client : il est faible pour un nouveau client.</li>
+        <li>La colonne « litige » n’est pas utilisée pour la facture en cours, car on ne sait pas quand le litige a été déclaré ; seuls les litiges passés du client comptent. Dans le jeu de démonstration, le statut « litige » affiché est celui connu en fin de période.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script id="demoData" type="text/plain">@@DEMO@@</script>
+<script>
+@@CORE@@
+</script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const eur = (v, d = 0) => (isFinite(v) ? v : 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (v, d = 0) => isFinite(v) ? (v * 100).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }) + ' %' : '–';
+const num = (v, d = 0) => (isFinite(v) ? v : 0).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const lvl = p => p >= 0.6 ? ['hi', 'Élevé'] : p >= 0.3 ? ['mid', 'Moyen'] : ['lo', 'Faible'];
+const lvlColor = { hi: 'var(--hi)', mid: 'var(--mid)', lo: 'var(--lo)' };
+const S = { rows: [], index: null, model: null, demo: true, date: null, win: 'all', lv: 'all', raw: null, map: null, list: [] };
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+function showErr(m) { const e = $('#globalErr'); e.textContent = m || ''; e.hidden = !m; }
+
+// ---------- chargement ----------
+function load(rows, demo, label) {
+  S.rows = rows; S.index = Core.buildIndex(rows); S.demo = demo;
+  const maxInv = rows.reduce((a, r) => Math.max(a, r.inv), -Infinity);
+  const minInv = rows.reduce((a, r) => Math.min(a, r.inv), Infinity);
+  S.date = demo ? Core.dayNum(2013, 9, 2) : maxInv;
+  $('#date').value = Core.iso(S.date);
+  $('#date').min = Core.iso(minInv); $('#date').max = Core.iso(maxInv + 60);
+  const st = rows.filter(r => r.settled !== null).map(r => r.settled);
+  const settledMax = st.length ? st.reduce((a, b) => Math.max(a, b), -Infinity) : maxInv;
+  if (demo) { $('#tStart').value = '2013-07-01'; $('#tEnd').value = '2013-11-25'; }
+  else { const end = Math.max(Math.min(settledMax - 35, maxInv), minInv + 7 * 22); $('#tEnd').value = Core.iso(end); $('#tStart').value = Core.iso(Math.max(end - 7 * 21, minInv + 60)); }
+  const nc = new Set(rows.map(r => r.cust)).size;
+  $('#srcInfo').innerHTML = `<b>${esc(label)}</b><br>${num(rows.length)} factures · ${num(nc)} clients · du ${Core.fmt(minInv)} au ${Core.fmt(maxInv)}`;
+  $('#testOut').innerHTML = '';
+  recompute();
+}
+function loadDemo() {
+  const P = Core.parseCSV($('#demoData').textContent.trim());
+  const N = Core.normalize(P.rows, Core.guessMapping(P.head));
+  load(N.rows, true, 'Jeu de démonstration IBM (simulé)');
+}
+
+// ---------- calcul principal ----------
+function recompute() {
+  showErr('');
+  const d = S.date;
+  let model, val = null;
+  try { model = Core.trainAt(S.rows, S.index, d); }
+  catch (e) { S.model = null; showErr(e.message); renderAll(); return; }
+  // fiabilité : modèle entraîné 91 jours plus tôt, testé sur les factures dont l'issue est devenue connue depuis
+  try {
+    const m0 = Core.trainAt(S.rows, S.index, d - 91);
+    const vs = S.rows.filter(r => r.due >= d - 91 - Core.GAP && r.due < d - Core.GAP && r.inv <= d);
+    const p = vs.map(r => Core.prob(m0, Core.features(r, r.inv, S.index, m0.pr)));
+    const y = vs.map(r => Core.labelAt(r, d).y);
+    val = { n: vs.length, auc: Core.auc(p, y), acc: p.filter((v, i) => (v >= 0.5) === (y[i] === 1)).length / p.length, base: 1 - y.reduce((a, b) => a + b, 0) / y.length };
+  } catch (e) { val = null; }
+  S.model = model; S.val = val;
+  // factures ouvertes à la date d'observation
+  const meanLate = new Map();
+  S.list = S.rows.filter(r => r.inv <= d && (r.settled === null || r.settled > d)).map(r => {
+    const f = Core.features(r, d, S.index, model.pr); const p = Core.prob(model, f);
+    return { r, f, p, ra: p * r.amt, days: r.due - d, why: Core.explain(f, model) };
+  });
+  // retard moyen des factures en retard, par client (historique connu)
+  for (const [c, o] of S.index) {
+    const st = o.settled.filter(x => x.settled < d && x.settled > x.due);
+    meanLate.set(c, st.length ? st.reduce((a, x) => a + (x.settled - x.due), 0) / st.length : null);
+  }
+  const allLate = S.rows.filter(x => x.settled !== null && x.settled < d && x.settled > x.due);
+  const gLate = allLate.length ? allLate.reduce((a, x) => a + (x.settled - x.due), 0) / allLate.length : 10;
+  S.list.forEach(o => { const L = meanLate.get(o.r.cust) ?? gLate; o.exp = Math.max(o.r.due, d) + o.p * L; });
+  renderAll();
+}
+
+// ---------- rendu ----------
+function kpi(label, v, s, cls = '') { return `<div class="kpi ${cls}"><div class="lab">${label}</div><div class="v">${v}</div><div class="s">${s}</div></div>`; }
+function pbar(p) { const [c] = lvl(p); return `<span class="pbar"><i><b style="width:${(p * 100).toFixed(0)}%;background:${lvlColor[c]}"></b></i><span class="mono">${pct(p)}</span></span>`; }
+
+function renderRel() {
+  const d = S.date, cap = Math.max(1, +$('#capN').value || 1);
+  const notDue = S.list.filter(o => o.days >= 0);
+  const W = { all: [0, 1e9], w1: [0, 6], w2: [7, 13], w3: [14, 20], w4: [21, 1e9] };
+  const WL = { all: 'Toutes', w1: '0-6 j', w2: '7-13 j', w3: '14-20 j', w4: '21 j et plus' };
+  $('#winChips').innerHTML = '<span class="lab" style="align-self:center">Échéance dans</span>' + Object.keys(W).map(k => `<button type="button" class="chip" data-win="${k}" aria-pressed="${S.win === k}">${WL[k]} (${notDue.filter(o => o.days >= W[k][0] && o.days <= W[k][1]).length})</button>`).join('');
+  const inWin = notDue.filter(o => o.days >= W[S.win][0] && o.days <= W[S.win][1]).sort((a, b) => b.ra - a.ra);
+  const LL = { all: 'Tous', hi: 'Élevé', mid: 'Moyen', lo: 'Faible' };
+  $('#lvlChips').innerHTML = '<span class="lab" style="align-self:center">Risque</span>' + Object.keys(LL).map(k => `<button type="button" class="chip" data-lv="${k}" aria-pressed="${S.lv === k}">${LL[k]} (${k === 'all' ? inWin.length : inWin.filter(o => lvl(o.p)[0] === k).length})</button>`).join('');
+  const callSet = new Set(inWin.slice(0, cap).map(o => o.r));
+  const shown = inWin.filter(o => S.lv === 'all' || lvl(o.p)[0] === S.lv);
+  const act = o => { const k = lvl(o.p)[0]; return k === 'hi' ? 'Appel avant échéance' : k === 'mid' ? 'Email J-5 puis calendrier standard' : 'Email automatique'; };
+  S.copy = [['Rang', 'Client', 'Facture', 'Échéance', 'Jours avant échéance', 'Montant', 'Probabilité de retard', 'Montant à risque', 'Niveau', 'Action conseillée', 'Facteurs'].join('\t'),
+    ...inWin.map((o, i) => [i + 1, o.r.cust, o.r.id, Core.fmt(o.r.due), o.days, o.r.amt.toFixed(2).replace('.', ','), (o.p * 100).toFixed(0) + ' %', o.ra.toFixed(2).replace('.', ','), lvl(o.p)[1], callSet.has(o.r) ? 'À appeler cette semaine' : act(o), o.why.join(', ')].join('\t'))].join('\n');
+  const rows = shown.slice(0, 300).map(o => { const i = inWin.indexOf(o); const [c, l] = lvl(o.p); const call = callSet.has(o.r);
+    return `<tr class="${call ? 'call' : ''}"><td class="num">${i + 1}</td><td>${esc(o.r.cust)}</td><td class="mono">${esc(o.r.id)}</td><td class="num">${Core.fmt(o.r.due)}<br><span class="why">dans ${o.days} j</span></td><td class="num">${eur(o.r.amt, 2)}</td><td>${pbar(o.p)}</td><td class="num">${eur(o.ra, 2)}</td><td><span class="pill ${c}">${l}</span></td><td>${call ? '<span class="pill nav">À appeler cette semaine</span>' : esc(act(o))}</td><td class="why">${esc(o.why.join(' · ') || '—')}</td></tr>`; }).join('');
+  $('#tRel').innerHTML = `<thead><tr><th class="num">Rang</th><th>Client</th><th>Facture</th><th class="num">Échéance</th><th class="num">Montant</th><th>Probabilité de retard</th><th class="num">Montant à risque</th><th>Niveau</th><th>Action</th><th>Principaux facteurs</th></tr></thead><tbody>${rows || '<tr><td colspan="10" class="why">Aucune facture dans cette sélection.</td></tr>'}</tbody>`;
+  const hiAmt = notDue.filter(o => o.p >= 0.6).reduce((a, o) => a + o.r.amt, 0);
+  const risk = notDue.reduce((a, o) => a + o.ra, 0);
+  const callAmt = inWin.slice(0, cap).reduce((a, o) => a + o.ra, 0);
+  $('#kpiRel').innerHTML = kpi('Factures non échues', num(notDue.length), eur(notDue.reduce((a, o) => a + o.r.amt, 0)) + ' d’encours', 'nav')
+    + kpi('Montant à risque', eur(risk), 'somme des probabilités × montants')
+    + kpi('Risque élevé', eur(hiAmt), notDue.filter(o => o.p >= 0.6).length + ' factures à probabilité ≥ 60 %', 'hi')
+    + kpi('Appels de la semaine', num(Math.min(cap, inWin.length)), eur(callAmt) + ' de montant à risque couvert');
+}
+
+function renderEch() {
+  const rate = (+$('#rate').value || 0) / 100;
+  const due = S.list.filter(o => o.days < 0).map(o => ({ ...o, late: -o.days })).sort((a, b) => b.late - a.late || b.r.amt - a.r.amt);
+  const stage = (L, disp) => disp ? ['mid', 'Litige : traiter avec l’ADV avant de relancer'] : L >= 60 ? ['hi', 'Contentieux à étudier (commissaire de justice, injonction de payer)'] : L >= 35 ? ['hi', 'Mise en demeure (LRAR)'] : L >= 28 ? ['mid', 'Courrier de relance'] : L >= 21 ? ['mid', 'Appel'] : L >= 14 ? ['lo', 'Second email'] : L >= 7 ? ['lo', 'Premier email'] : ['lo', 'Email prévu à J+7'];
+  const rows = due.slice(0, 300).map(o => { const pen = o.r.amt * rate * o.late / 365 + 40; const [c, s] = stage(o.late, o.r.disp); const [lc, ll] = lvl(o.p);
+    return `<tr><td>${esc(o.r.cust)}</td><td class="mono">${esc(o.r.id)}</td><td class="num">${Core.fmt(o.r.due)}</td><td class="num">J+${o.late}</td><td class="num">${eur(o.r.amt, 2)}</td><td><span class="pill ${c}">${esc(s)}</span></td><td class="num">${eur(pen, 2)}</td><td><span class="pill ${lc}">${ll}</span></td></tr>`; }).join('');
+  $('#tEch').innerHTML = `<thead><tr><th>Client</th><th>Facture</th><th class="num">Échéance</th><th class="num">Retard</th><th class="num">Montant</th><th>Étape proposée</th><th class="num">Pénalités + 40 €</th><th>Profil du client</th></tr></thead><tbody>${rows || '<tr><td colspan="8" class="why">Aucune facture échue à cette date.</td></tr>'}</tbody>`;
+  const amt = due.reduce((a, o) => a + o.r.amt, 0);
+  $('#kpiEch').innerHTML = kpi('Factures échues', num(due.length), eur(amt) + ' impayés', 'hi')
+    + kpi('À mettre en demeure', num(due.filter(o => o.late >= 35 && !o.r.disp).length), 'retard de 35 jours ou plus')
+    + kpi('Litiges déclarés', num(due.filter(o => o.r.disp).length), 'à traiter avant relance')
+    + kpi('Pénalités exigibles', eur(due.reduce((a, o) => a + o.r.amt * rate * o.late / 365 + 40, 0)), 'au taux de ' + num(rate * 100, 2) + ' % + 40 € par facture');
+}
+
+function barChart(data, opts) { // data: [{label, value, color}]
+  const W = 560, H = 230, L = 64, B = 44, T = 16, R = 10;
+  const max = Math.max(...data.map(d => d.value), 1) * 1.12;
+  const step = nice(max / 4); const top = step * Math.ceil(max / step);
+  const bw = (W - L - R) / data.length;
+  let g = '';
+  for (let v = 0; v <= top + 1e-9; v += step) { const y = T + (H - T - B) * (1 - v / top); g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${opts.fmt(v)}</text>`; }
+  data.forEach((d, i) => { const h = (H - T - B) * d.value / top; const x = L + i * bw + bw * 0.18; const w = bw * 0.64; const y = H - B - h;
+    g += `<rect x="${x}" y="${y}" width="${w}" height="${Math.max(h, 0)}" rx="3" fill="${d.color || 'var(--navy)'}"/><text class="val" x="${x + w / 2}" y="${y - 5}" text-anchor="middle">${opts.fmtVal ? opts.fmtVal(d.value) : opts.fmt(d.value)}</text>`;
+    d.label.split('\n').forEach((t, k) => g += `<text x="${x + w / 2}" y="${H - B + 16 + k * 13}" text-anchor="middle">${esc(t)}</text>`); });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(opts.aria)}">${g}</svg>`;
+}
+function nice(x) { const e = Math.pow(10, Math.floor(Math.log10(x))); const f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; }
+const kfmt = v => v >= 1000 ? num(v / 1000, v >= 10000 ? 0 : 1) + ' k€' : num(v) + ' €';
+
+function renderDash() {
+  const d = S.date; const open = S.list;
+  const buckets = [['Non échu', o => o.days >= 0], ['1-30 j', o => o.days < 0 && o.days >= -30], ['31-60 j', o => o.days < -30 && o.days >= -60], ['61-90 j', o => o.days < -60 && o.days >= -90], ['> 90 j', o => o.days < -90]];
+  const cols = ['var(--navy)', 'var(--mid)', 'var(--hi)', 'var(--hi)', 'var(--hi)'];
+  $('#chAge').innerHTML = barChart(buckets.map(([l, f], i) => ({ label: l, value: open.filter(f).reduce((a, o) => a + o.r.amt, 0), color: cols[i] })), { fmt: kfmt, aria: 'Balance âgée par tranche' });
+  const weeks = Array.from({ length: 8 }, (_, i) => ({ label: 'S+' + (i + 1) + '\n' + Core.fmt(d + 7 * i).slice(0, 5), value: 0, color: 'var(--navy-2)' }));
+  open.forEach(o => { const k = Math.floor((o.exp - d) / 7); if (k >= 0 && k < 8) weeks[k].value += o.r.amt; });
+  $('#chCash').innerHTML = barChart(weeks, { fmt: kfmt, aria: 'Encaissements attendus par semaine' });
+  const outst = open.reduce((a, o) => a + o.r.amt, 0);
+  const sales90 = S.rows.filter(r => r.inv > d - 90 && r.inv <= d).reduce((a, r) => a + r.amt, 0);
+  const dso = sales90 ? outst / sales90 * 90 : NaN;
+  const risk = open.reduce((a, o) => a + o.ra, 0);
+  $('#kpiDash').innerHTML = kpi('DSO', isFinite(dso) ? num(dso, 1) + ' j' : '–', 'encours ÷ CA des 90 derniers jours × 90', 'nav')
+    + kpi('Encours clients', eur(outst), num(open.length) + ' factures ouvertes')
+    + kpi('Montant à risque', eur(risk), pct(outst ? risk / outst : 0) + ' de l’encours', 'hi')
+    + kpi('Encaissements attendus (4 sem.)', eur(weeks.slice(0, 4).reduce((a, w) => a + w.value, 0)), 'estimation à partir du score');
+  const v = S.val, m = S.model;
+  $('#fiab').innerHTML = m ? `<div class="deck">
+    <div class="card"><div class="lab">Modèle du jour</div><div class="big">${num(m.n)}</div><div class="hint">factures d’apprentissage · taux de retard ${pct(m.lateRate)}</div></div>
+    <div class="card"><div class="lab">AUC sur les 3 derniers mois connus</div><div class="big">${v && isFinite(v.auc) ? num(v.auc, 2) : '–'}</div><div class="hint">0,5 = hasard · 1 = parfait${v ? ' · ' + num(v.n) + ' factures' : ''}</div></div>
+    <div class="card"><div class="lab">Bonnes prédictions</div><div class="big">${v ? pct(v.acc) : '–'}</div><div class="hint">${v ? 'contre ' + pct(v.base) + ' en prédisant « tout à l’heure »' : 'historique insuffisant pour mesurer'}</div></div></div>
+    <p class="note">Le modèle est réentraîné à chaque changement de date d’observation : c’est la boucle d’apprentissage (étape ⑨). La fiabilité est mesurée avec un modèle entraîné 3 mois plus tôt, sur des factures qu’il n’a pas vues.</p>` : '<p class="why">Pas de modèle : historique insuffisant.</p>';
+}
+
+function renderVars() {
+  const m = S.model; const desc = [['Nombre de factures réglées du client', 'log(1 + n)'], ['Taux de retard passé du client', 'lissé'], ['Retard moyen passé du client (jours)', 'lissé'], ['Taux de litiges passés du client', 'lissé'], ['Dernière facture réglée en retard', 'oui = 1'], ['Montant de la facture', 'logarithme'], ['Montant / montant moyen du client', 'ratio'], ['Facture dématérialisée', 'oui = 1'], ['Autres factures ouvertes du client', 'nombre']];
+  $('#tVars').innerHTML = desc.map((d, j) => `<tr><td>${d[0]}</td><td class="why">${d[1]}</td><td class="num">${m ? (m.w[j] >= 0 ? '+' : '') + num(m.w[j], 2) : '–'}</td></tr>`).join('') + '<tr><td colspan="3" class="why">Poids sur variables standardisées : un poids positif augmente le risque de retard.</td></tr>';
+}
+
+function runTest() {
+  const out = $('#testOut');
+  const start = Core.parseDate($('#tStart').value), end = Core.parseDate($('#tEnd').value);
+  const a = +$('#tWin').value, frac = +$('#tCap').value;
+  if (start === null || end === null || end <= start) { out.innerHTML = '<p class="err">Choisissez une date de fin postérieure au début.</p>'; return; }
+  let m; try { m = Core.trainAt(S.rows, S.index, start); } catch (e) { out.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const R = Core.backtest(S.rows, S.index, m, start, end, a, frac);
+  if (!R.length) { out.innerHTML = '<p class="err">Aucune facture à tester sur cette période.</p>'; return; }
+  const sum = k => R.reduce((s, r) => s + r[k], 0); const T = sum('tot');
+  const z1 = sum('Z1') / T, z2 = sum('Z2') / T, x = sum('X') / T;
+  // intervalle de confiance par rééchantillonnage des semaines
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const g = [], g2 = [];
+  for (let b = 0; b < 1000; b++) { let t = 0, sx = 0, s1 = 0, s2 = 0; for (let i = 0; i < R.length; i++) { const r = R[Math.floor(rnd() * R.length)]; t += r.tot; sx += r.X; s1 += r.Z1; s2 += r.Z2; } g.push((sx - s1) / t); g2.push((sx - s2) / t); }
+  const q = (arr, p) => { const s = [...arr].sort((u, v) => u - v); return s[Math.floor(p * (s.length - 1))]; };
+  const verdict = (lo, hi) => lo > 0 ? '<span class="ok">avantage significatif</span>' : hi < 0 ? '<span class="err">désavantage significatif</span>' : 'différence non significative';
+  const weeksWon = R.filter(r => r.X > r.Z1).length;
+  out.innerHTML = `<div class="grid2">
+    <div>${barChart([{ label: 'Z : ancienneté\n(workflow actuel)', value: z1 * 100, color: 'var(--bar)' }, { label: 'Tri par montant\n(référence simple)', value: z2 * 100, color: 'var(--mid)' }, { label: 'X : score × montant\n(nouveau workflow)', value: x * 100, color: 'var(--navy)' }], { fmt: v => num(v) + ' %', fmtVal: v => num(v, 1) + ' %', aria: 'Part du montant en retard ciblée' })}
+      <p class="hint">Part du montant des factures payées en retard ciblée par chaque méthode, ${R.length} semaines, ${num(R.reduce((s, r) => s + r.n, 0))} factures.</p></div>
+    <div class="deck" style="grid-template-columns:1fr">
+      <div class="card"><div class="lab">Gain du score contre l’ancienneté</div><div class="big">${x - z1 >= 0 ? '+' : ''}${num((x - z1) * 100, 1)} pts</div><div class="hint">IC 95 % : ${num(q(g, .025) * 100, 1)} à ${num(q(g, .975) * 100, 1)} pts · ${verdict(q(g, .025), q(g, .975))} · meilleur ${weeksWon} semaines sur ${R.length}</div></div>
+      <div class="card"><div class="lab">Gain du score contre le tri par montant</div><div class="big">${x - z2 >= 0 ? '+' : ''}${num((x - z2) * 100, 1)} pts</div><div class="hint">IC 95 % : ${num(q(g2, .025) * 100, 1)} à ${num(q(g2, .975) * 100, 1)} pts · ${verdict(q(g2, .025), q(g2, .975))}</div></div>
+    </div></div>
+    <h3>Détail par semaine</h3>
+    <div class="tbl"><table><thead><tr><th class="num">Semaine du</th><th class="num">Factures</th><th class="num">Dont en retard</th><th class="num">Contactées</th><th class="num">Z : ancienneté</th><th class="num">Tri montant</th><th class="num">X : score</th></tr></thead><tbody>
+    ${R.map(r => `<tr><td class="num">${Core.fmt(r.t)}</td><td class="num">${r.n}</td><td class="num">${r.nl}</td><td class="num">${r.N}</td><td class="num">${pct(r.tot ? r.Z1 / r.tot : 0)}</td><td class="num">${pct(r.tot ? r.Z2 / r.tot : 0)}</td><td class="num">${pct(r.tot ? r.X / r.tot : 0)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="note">Le modèle est entraîné au ${Core.fmt(start)} sur ${num(m.n)} factures. Les intervalles de confiance sont calculés par rééchantillonnage des semaines (1 000 tirages). Le test mesure le ciblage, pas l’effet de l’appel sur le paiement.</p>`;
+}
+
+function renderAll() { renderRel(); renderEch(); renderDash(); renderVars(); }
+
+// ---------- import CSV ----------
+const FIELDS = [['cust', 'Client *'], ['id', 'N° de facture'], ['inv', 'Date de facture *'], ['due', 'Date d’échéance *'], ['amt', 'Montant *'], ['settled', 'Date de règlement'], ['disp', 'Litige'], ['elec', 'Facture dématérialisée']];
+function handleFile(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const P = Core.parseCSV(String(fr.result)); S.raw = P; const g = Core.guessMapping(P.head);
+      $('#mapGrid').innerHTML = FIELDS.map(([k, l]) => `<div class="field"><label for="m_${k}">${l}</label><select id="m_${k}"><option value="">— aucune —</option>${P.head.map(h => `<option ${g[k] === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></div>`).join('');
+      $('#mapZone').hidden = false; $('#mapStatus').textContent = `${P.rows.length} lignes lues, ${P.head.length} colonnes. Vérifiez la correspondance.`;
+    } catch (e) { $('#mapStatus').innerHTML = '<span class="err">Fichier illisible : vérifiez qu’il s’agit bien d’un CSV.</span>'; $('#mapZone').hidden = false; }
+  };
+  fr.readAsText(file);
+}
+function applyMap() {
+  const map = Object.fromEntries(FIELDS.map(([k]) => [k, $('#m_' + k).value]));
+  const miss = FIELDS.filter(([k, l]) => l.endsWith('*') && !map[k]).map(([, l]) => l.replace(' *', ''));
+  if (miss.length) { $('#mapStatus').innerHTML = `<span class="err">Colonne manquante : ${esc(miss.join(', '))}.</span>`; return; }
+  if (!map.settled) { $('#mapStatus').innerHTML = '<span class="err">Choisissez la colonne « Date de règlement » : sans elle, l’application ne peut pas savoir quelles factures ont été payées en retard, donc ne peut pas apprendre.</span>'; return; }
+  try {
+    const N = Core.normalize(S.raw.rows, map);
+    if (N.rows.length < 50) { $('#mapStatus').innerHTML = `<span class="err">Seulement ${N.rows.length} lignes valides : vérifiez le format des dates et des montants.</span>`; return; }
+    const paid = N.rows.filter(r => r.settled !== null).length;
+    if (paid < 50) { $('#mapStatus').innerHTML = `<span class="err">Seulement ${paid} factures ont une date de règlement lisible : vérifiez la colonne choisie.</span>`; return; }
+    load(N.rows, false, 'Votre fichier');
+    const msg = `<span class="ok">${num(N.rows.length)} factures chargées</span> dont ${num(paid)} réglées et ${num(N.rows.length - paid)} ouvertes${N.errors.length ? ` · ${N.errors.length} lignes ignorées (lignes ${N.errors.slice(0, 5).join(', ')}${N.errors.length > 5 ? '…' : ''})` : ''} · dates lues au format ${N.order === 'mdy' ? 'mois/jour/année' : 'jour/mois/année'}`;
+    $('#mapStatus').innerHTML = msg + (S.model ? ' · <span class="ok">modèle entraîné sur ' + num(S.model.n) + ' factures</span>' : ' · <span class="err">' + esc($('#globalErr').textContent) + '</span>');
+    if (S.model) { $('#importPanel').hidden = true; location.hash = 'relances'; route(); window.scrollTo(0, 0); }
+  } catch (e) { $('#mapStatus').innerHTML = '<span class="err">Import impossible : ' + esc(e.message) + '</span>'; }
+}
+
+// ---------- navigation ----------
+const VIEWS = ['relances', 'echues', 'test', 'tableau', 'decision', 'methode'];
+function route() {
+  const h = location.hash.replace('#', ''); const v = VIEWS.includes(h) ? h : 'relances';
+  VIEWS.forEach(k => $('#v-' + k).hidden = k !== v);
+  document.querySelectorAll('nav.tabs a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + v ? 'page' : 'false'));
+  if (v === 'test' && !$('#testOut').innerHTML && S.model) runTest();
+}
+window.addEventListener('hashchange', route);
+
+// ---------- événements ----------
+$('#btnDemo').onclick = () => { $('#importPanel').hidden = true; loadDemo(); };
+$('#btnImport').onclick = () => { $('#importPanel').hidden = !$('#importPanel').hidden; };
+$('#btnPick').onclick = () => $('#file').click();
+$('#file').onchange = e => e.target.files[0] && handleFile(e.target.files[0]);
+const drop = $('#drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]); });
+$('#btnApply').onclick = applyMap;
+$('#date').onchange = () => { const v = Core.parseDate($('#date').value); if (v !== null) { S.date = v; recompute(); } };
+$('#capN').oninput = () => { store.set('rr_cap', $('#capN').value); renderRel(); };
+$('#rate').oninput = renderEch;
+$('#btnTest').onclick = runTest;
+document.addEventListener('click', e => {
+  const w = e.target.closest('[data-win]'); if (w) { S.win = w.dataset.win; renderRel(); }
+  const l = e.target.closest('[data-lv]'); if (l) { S.lv = l.dataset.lv; renderRel(); }
+});
+$('#copyRel').onclick = () => {
+  const st = $('#copyStatus');
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = S.copy || ''; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); st.textContent = 'Liste copiée : collez-la dans Excel.'; } catch (e) { st.textContent = 'Copie impossible ici : sélectionnez le tableau à la main.'; } ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(S.copy || '').then(() => st.textContent = 'Liste copiée : collez-la dans Excel.', fallback); else fallback();
+};
+const savedCap = store.get('rr_cap'); if (savedCap) $('#capN').value = savedCap;
+loadDemo(); route();
+})();
+</script>

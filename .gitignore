@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+~$*
+.venv/
+node_modules/
+results/country_*
+results/test_scores.csv
+results/lr_params.csv
